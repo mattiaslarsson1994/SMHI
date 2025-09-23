@@ -2,6 +2,7 @@ package backend;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SmhiBackendApplication.class, TestConfig.class})
 @ActiveProfiles("test")
+@DisplayName("Integration: HTTP -> controller -> service stub")
 class ObservationsIntegrationTest {
 
   static WireMockServer wm;
@@ -51,6 +53,7 @@ class ObservationsIntegrationTest {
   }
 
   @Test
+  @DisplayName("Returns >0 merged observations with test key and last-hour")
   void endToEnd_returnsMergedObservation() {
     // call our API with test key
     var client = WebClient.builder()
@@ -64,6 +67,7 @@ class ObservationsIntegrationTest {
         .bodyToMono(List.class)
         .block();
 
+    System.out.println("GET /api/observations?stationId=159880&range=last-hour -> rows=" + (rows == null ? "null" : rows.size()));
     assertThat(rows).isNotNull();
     assertThat(rows.size()).isGreaterThan(0);
   }

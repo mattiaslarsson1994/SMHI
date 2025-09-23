@@ -1,5 +1,6 @@
 package backend;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -11,9 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Example: test your merge logic using tiny fixture maps.
  * If your merge is inside ObservationService, extract a small static method or helper to test directly.
  */
+@DisplayName("Observation merge logic")
 public class ObservationServiceMergeTest {
 
   @Test
+  @DisplayName("Merges by timestamp/station and preserves nulls")
   void mergesByTimestampAndStationAndKeepsNulls() {
     // fixture timestamps
     Instant t1 = Instant.parse("2025-09-23T10:00:00Z");
@@ -39,6 +42,9 @@ public class ObservationServiceMergeTest {
           wind.get(ts)          // windSpeedMs
       ));
     }
+
+    System.out.println("Merged observations (expected 2): " + merged.size());
+    merged.forEach(row -> System.out.println("  " + row));
 
     assertThat(merged).hasSize(2);
     var row1 = merged.get(0);

@@ -1,5 +1,6 @@
 package backend;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest // slices controller + filter
 @ActiveProfiles("test")
+@DisplayName("Controller Web slice with API key filter")
 class ObservationsControllerWebTest {
 
   @Autowired MockMvc mvc;
@@ -24,12 +26,16 @@ class ObservationsControllerWebTest {
   @MockBean ObservationService service;
 
   @Test
+  @DisplayName("Blocks when x-api-key is missing")
   void blocksWithoutApiKey() throws Exception {
+    var result = mvc.perform(get("/api/observations")).andReturn();
+    System.out.println("GET /api/observations without key -> status " + result.getResponse().getStatus());
     mvc.perform(get("/api/observations"))
         .andExpect(status().isUnauthorized());
   }
 
   @Test
+  @DisplayName("200 OK with x-api-key and default range")
   void okWithApiKeyAndDefaultRange() throws Exception {
     // mock service result
     var row = new ObservationPoint("159880", "Stockholm A", 59.3, 18.1,
@@ -37,20 +43,23 @@ class ObservationsControllerWebTest {
     given(service.getMergedObservations(any(), any(), any(), any(), any(), any(), any()))
         .willReturn(List.of(row));
 
-    mvc.perform(get("/api/observations")
-            .header("x-api-key", "test-key"))
+    var result = mvc.perform(get("/api/observations").header("x-api-key", "test-key")).andReturn();
+    System.out.println("GET /api/observations with key -> status " + result.getResponse().getStatus());
+    System.out.println("Body: " + result.getResponse().getContentAsString());
+    mvc.perform(get("/api/observations").header("x-api-key", "test-key"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].stationId").value("159880"))
         .andExpect(jsonPath("$[0].gustMs").value(12.4));
   }
 
   @Test
+  @DisplayName("Accepts range=last-day with key")
   void respectsRangeLastDay() throws Exception {
     given(service.getMergedObservations(any(), eq("last-day"), any(), any(), any(), any(), any()))
         .willReturn(List.of());
-    mvc.perform(get("/api/observations")
-            .param("range", "last-day")
-            .header("x-api-key", "test-key"))
+    var result = mvc.perform(get("/api/observations").param("range", "last-day").header("x-api-key", "test-key")).andReturn();
+    System.out.println("GET /api/observations?range=last-day with key -> status " + result.getResponse().getStatus());
+    mvc.perform(get("/api/observations").param("range", "last-day").header("x-api-key", "test-key"))
         .andExpect(status().isOk());
   }
 }
