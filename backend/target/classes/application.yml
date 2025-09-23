@@ -7,7 +7,7 @@ smhi:
   stationCacheHours: 24     # station metadata is stable
 
 security:
-  apiKey: local-dev-key     # per brief, secure storage not required. :contentReference[oaicite:5]{index=5}
+  apiKey: fhn1CaoXEI6gfOVOuHbJbAbFiM8MY4PH     # per brief, secure storage not required. :contentReference[oaicite:5]{index=5}
 
 spring:
   cache:
