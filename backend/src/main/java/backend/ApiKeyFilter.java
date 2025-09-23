@@ -15,13 +15,12 @@ public class ApiKeyFilter implements Filter {
   String configured;
 
   @Override
-  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-      throws IOException, ServletException {
+  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
     HttpServletRequest http = (HttpServletRequest) req;
     HttpServletResponse out  = (HttpServletResponse) res;
 
-    String path   = http.getRequestURI();
+    String path = http.getRequestURI();
     String method = http.getMethod();
 
     boolean swaggerUi   = path.equals("/swagger-ui.html") || path.equals("/swagger-ui/index.html") || path.startsWith("/swagger-ui/");

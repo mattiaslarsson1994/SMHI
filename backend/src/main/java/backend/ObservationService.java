@@ -1,17 +1,20 @@
 package backend;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Service
 public class ObservationService {
+
+  private static final int PARAM_TEMP = 1;   // Lufttemperatur
+  private static final int PARAM_WIND = 4;   // (optional)
+  private static final int PARAM_GUST = 21;  // Byvind
+
   private final SmhiClient smhi;
   private final List<StationDto> defaultStations;
 
@@ -23,60 +26,132 @@ public class ObservationService {
         .toList();
   }
 
-  public List<StationDto> getStations(String set) {
-    return defaultStations;
-  }
-
   public List<ObservationPoint> getMergedObservations(
-      String stationId,
-      String range,
+      String stationIdCsv,
+      String range,                 // "last-hour" | "last-day" (controller should validate)
       Instant from,
       Instant to,
       Double lat,
       Double lon,
-      Double radiusKm) {
-    String effectiveRange = range == null || range.isBlank() ? "last-hour" : range;
-    List<StationDto> stations = stationId != null ? List.of(new StationDto(stationId, "Unknown", 0, 0)) : defaultStations;
+      Double radiusKm
+  ) {
+    final String effectiveRange = (range == null || range.isBlank()) ? "last-hour" : range;
 
-    List<ObservationPoint> mergedAll = new ArrayList<>();
+    // 1) Resolve stations
+    final List<StationDto> stations = resolveStations(stationIdCsv);
+
+    // 2) Fetch series per station and merge
+    final List<ObservationPoint> mergedAll = new ArrayList<>(1024);
+
     for (StationDto s : stations) {
-      var gustSeries = switch (effectiveRange) {
-        case "last-day" -> smhi.fetchLatestDay(s.id(), 21);
-        default -> smhi.fetchLatestHour(s.id(), 21);
-      };
-      var tempSeries = switch (effectiveRange) {
-        case "last-day" -> smhi.fetchLatestDay(s.id(), 1);
-        default -> smhi.fetchLatestHour(s.id(), 1);
-      };
+      SmhiClient.SmhiSeries gustSeries;
+      SmhiClient.SmhiSeries tempSeries;
+      // Optionally include wind:
+      // SmhiClient.SmhiSeries windSeries;
 
-      Map<Instant, Double> gustByTs = toMap(gustSeries);
-      Map<Instant, Double> tempByTs = toMap(tempSeries);
-      var allTs = new TreeSet<Instant>();
-      allTs.addAll(gustByTs.keySet());
-      allTs.addAll(tempByTs.keySet());
-      for (Instant ts : allTs) {
+      if ("last-day".equals(effectiveRange)) {
+        gustSeries = smhi.fetchLatestDay(s.id(), PARAM_GUST);
+        tempSeries = smhi.fetchLatestDay(s.id(), PARAM_TEMP);
+        // windSeries = smhi.fetchLatestDay(s.id(), PARAM_WIND);
+      } else { // last-hour
+        gustSeries = smhi.fetchLatestHour(s.id(), PARAM_GUST);
+        tempSeries = smhi.fetchLatestHour(s.id(), PARAM_TEMP);
+        // windSeries = smhi.fetchLatestHour(s.id(), PARAM_WIND);
+      }
+
+      Map<Long, Double> gust = toMap(gustSeries);
+      Map<Long, Double> temp = toMap(tempSeries);
+      Map<Long, Double> wind = Collections.emptyMap(); // change if you enable wind
+
+      // union of timestamps present in any series
+      var allTs = new TreeSet<Long>();
+      allTs.addAll(gust.keySet());
+      allTs.addAll(temp.keySet());
+      allTs.addAll(wind.keySet());
+
+      for (Long ts : allTs) {
+        Instant t = Instant.ofEpochMilli(ts);
         mergedAll.add(new ObservationPoint(
             s.id(), s.name(), s.lat(), s.lon(),
-            ts,
-            gustByTs.get(ts),
-            tempByTs.get(ts),
-            null
+            t,
+            gust.get(ts),       // gustMs (can be null)
+            temp.get(ts),       // airTempC (can be null)
+            wind.get(ts)        // windSpeedMs (null here)
         ));
       }
     }
-    return mergedAll;
+
+    // 3) Filters: time window & geo
+    Stream<ObservationPoint> stream = mergedAll.stream();
+
+    if (from != null) stream = stream.filter(p -> !p.timestampUtc().isBefore(from));
+    if (to   != null) stream = stream.filter(p -> !p.timestampUtc().isAfter(to));
+
+    if (lat != null && lon != null && radiusKm != null && radiusKm > 0) {
+      final double oLat = lat, oLon = lon, r = radiusKm;
+      stream = stream.filter(p -> haversineKm(oLat, oLon, p.lat(), p.lon()) <= r);
+    }
+
+    return stream
+        .sorted(Comparator
+            .comparing(ObservationPoint::timestampUtc).reversed()
+            .thenComparing(ObservationPoint::stationId))
+        .toList();
   }
 
-  private static Map<Instant, Double> toMap(SmhiClient.SmhiSeries series) {
-    Map<Instant, Double> map = new LinkedHashMap<>();
-    if (series != null && series.value != null) {
-      for (SmhiClient.ValuePoint vp : series.value) {
-        Instant ts = vp.asInstantUtc();
-        if (ts != null) map.put(ts, vp.value);
+  /** Stations endpoint helper. If you expose /api/stations?set=all|core you can branch here. */
+  public List<StationDto> getStations(String set) {
+    // For the assignment, "all stations" is most useful so geo filter works.
+    // We use the parameter 1 listing to get station meta (id/name/lat/lon).
+    return smhi.fetchStationsFromParameter(PARAM_TEMP);
+  }
+
+  // ---------- helpers ----------
+
+  private List<StationDto> resolveStations(String stationIdCsv) {
+    if (stationIdCsv != null && !stationIdCsv.isBlank()) {
+      Set<String> ids = Arrays.stream(stationIdCsv.split(","))
+          .map(String::trim).filter(s -> !s.isBlank())
+          .collect(Collectors.toCollection(LinkedHashSet::new));
+
+      // try to enrich with real metadata
+      Map<String, StationDto> byId = smhi.fetchStationsFromParameter(PARAM_TEMP)
+          .stream().collect(Collectors.toMap(StationDto::id, s -> s, (a, b) -> a));
+
+      List<StationDto> out = new ArrayList<>(ids.size());
+      for (String id : ids) {
+        StationDto meta = byId.get(id);
+        if (meta != null) out.add(meta);
+        else out.add(new StationDto(id, "Unknown", 0.0, 0.0));
+      }
+      return out;
+    }
+
+    // Default: ALL stations (per PDF)
+    return smhi.fetchStationsFromParameter(PARAM_TEMP);
+  }
+
+  /** Convert your SmhiSeries (value list) to a map keyed by epochMillis. */
+  private static Map<Long, Double> toMap(SmhiClient.SmhiSeries series) {
+    if (series == null || series.value == null) return Collections.emptyMap();
+    Map<Long, Double> m = new HashMap<>(series.value.size() * 2);
+    for (SmhiClient.ValuePoint vp : series.value) {
+      if (vp != null && vp.date != null) {
+        m.put(vp.date, vp.value);
       }
     }
-    return map;
+    return m;
+  }
+
+  /** Haversine distance in kilometers */
+  private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    final double R = 6371.0;
+    double dLat = Math.toRadians(lat2 - lat1);
+    double dLon = Math.toRadians(lon2 - lon1);
+    double a = Math.sin(dLat/2)*Math.sin(dLat/2)
+        + Math.cos(Math.toRadians(lat1))*Math.cos(Math.toRadians(lat2))
+        * Math.sin(dLon/2)*Math.sin(dLon/2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 }
-
-
