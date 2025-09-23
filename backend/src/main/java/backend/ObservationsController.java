@@ -31,7 +31,7 @@ public class ObservationsController {
   @Operation(summary = "Merged Byvind + Lufttemperatur (+Vindhastighet)")
   public List<ObservationPoint> list(
       @RequestParam(required = false) String stationId,
-      @RequestParam(defaultValue = "last-hour") String range,
+      @RequestParam(required = false, defaultValue = "last-hour") String range,
       @RequestParam(required = false) Instant from,
       @RequestParam(required = false) Instant to,
       @RequestParam(required = false) Double lat,

@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Primary;
 public class TestConfig {
   @Bean
   @Primary
-  ObservationService observationServiceStub() {
-    return new ObservationService() {
+  ObservationService observationServiceStub(SmhiClient smhi) {
+    return new ObservationService(smhi, List.of("159880")) {
       @Override
       public List<ObservationPoint> getMergedObservations(
           String stationId,

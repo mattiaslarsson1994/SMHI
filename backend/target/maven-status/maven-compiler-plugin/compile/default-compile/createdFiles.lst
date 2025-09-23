@@ -3,5 +3,8 @@ backend\SmhiConfig.class
 backend\ApiKeyFilter.class
 backend\SmhiBackendApplication.class
 backend\ObservationPoint.class
+backend\SmhiClient$SmhiSeries.class
+backend\SmhiClient.class
 backend\ObservationsController.class
+backend\SmhiClient$ValuePoint.class
 backend\StationDto.class

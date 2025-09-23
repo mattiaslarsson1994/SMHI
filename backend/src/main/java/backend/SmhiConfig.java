@@ -7,7 +7,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class SmhiConfig {
-  @Bean WebClient smhiClient(@Value("${smhi.baseUrl}") String base) {
+  @Bean WebClient smhiWebClient(@Value("${smhi.baseUrl}") String base) {
     return WebClient.builder().baseUrl(base).build();
   }
 }

@@ -5,6 +5,7 @@ smhi:
   baseUrl: https://opendata-download-metobs.smhi.se/api/version/1.0
   cacheSeconds: 60          # avoid hammering SMHI
   stationCacheHours: 24     # station metadata is stable
+  defaultStations: ["159880"]
 
 security:
   apiKey: fhn1CaoXEI6gfOVOuHbJbAbFiM8MY4PH     # per brief, secure storage not required. :contentReference[oaicite:5]{index=5}
