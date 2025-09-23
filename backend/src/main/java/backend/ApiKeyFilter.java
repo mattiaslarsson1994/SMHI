@@ -1,12 +1,11 @@
 package backend;
 
-import java.io.IOException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import java.io.IOException;
 
 @Component
 @Order(1)
@@ -22,17 +21,13 @@ public class ApiKeyFilter implements Filter {
     HttpServletRequest http = (HttpServletRequest) req;
     HttpServletResponse out  = (HttpServletResponse) res;
 
-    String path = http.getRequestURI();
+    String path   = http.getRequestURI();
     String method = http.getMethod();
 
-    // allow Swagger UI + assets + OpenAPI JSON + favicon + health + CORS preflight
-    boolean swagger = path.equals("/swagger-ui.html")
-        || path.startsWith("/swagger-ui/")
-        || path.startsWith("/v3/api-docs/");
-    boolean publicPaths = swagger
-        || path.equals("/favicon.ico")
-        || path.equals("/actuator/health");
-    boolean preflight = "OPTIONS".equalsIgnoreCase(method);
+    boolean swaggerUi   = path.equals("/swagger-ui.html") || path.equals("/swagger-ui/index.html") || path.startsWith("/swagger-ui/");
+    boolean openApiJson = path.equals("/v3/api-docs") || path.startsWith("/v3/api-docs/");
+    boolean publicPaths = swaggerUi || openApiJson || path.equals("/favicon.ico") || path.equals("/actuator/health");
+    boolean preflight   = "OPTIONS".equalsIgnoreCase(method);
 
     if (publicPaths || preflight) {
       chain.doFilter(req, res);
@@ -46,7 +41,6 @@ public class ApiKeyFilter implements Filter {
       out.getWriter().write("{\"error\":\"invalid api key\"}");
       return;
     }
-
     chain.doFilter(req, res);
   }
 }
