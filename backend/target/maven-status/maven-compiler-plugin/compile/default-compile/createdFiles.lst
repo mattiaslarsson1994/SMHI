@@ -1,0 +1,7 @@
+backend\ObservationService.class
+backend\SmhiConfig.class
+backend\ApiKeyFilter.class
+backend\SmhiBackendApplication.class
+backend\ObservationPoint.class
+backend\ObservationsController.class
+backend\StationDto.class
