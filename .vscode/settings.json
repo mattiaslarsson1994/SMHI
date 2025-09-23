@@ -1,0 +1,10 @@
+{
+  "java.project.sourcePaths": [
+    "backend/src/main/java"
+  ],
+  "java.import.maven.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic"
+}
+
+

@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+smhi:
+  baseUrl: https://opendata-download-metobs.smhi.se/api/version/1.0
+  cacheSeconds: 60          # avoid hammering SMHI
+  stationCacheHours: 24     # station metadata is stable
+
+security:
+  apiKey: local-dev-key     # per brief, secure storage not required. :contentReference[oaicite:5]{index=5}
+
+spring:
+  cache:
+    type: caffeine
