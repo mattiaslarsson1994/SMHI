@@ -26,6 +26,7 @@
 - **`@RequestMapping("/api")`**: Base path for all endpoints
 - **`@Tag(name = "Observations")`**: OpenAPI documentation tag
 - **`@RequiredArgsConstructor`**: Lombok annotation for constructor injection
+- **Enhanced OpenAPI Annotations**: Comprehensive Swagger documentation with examples and parameter descriptions
 
 **Endpoints**:
 1. **`GET /api/stations`**
@@ -52,14 +53,34 @@
 
 ---
 
+### OpenApiConfig.java
+**Location**: `backend/src/main/java/backend/OpenApiConfig.java`
+
+**Purpose**: Configuration class for OpenAPI/Swagger documentation with comprehensive API information and security setup.
+
+**Key Features**:
+- **API Information**: Detailed title, description, version, and contact information
+- **Server Configuration**: Development and production server URLs
+- **Security Configuration**: API key authentication setup for Swagger UI
+- **Enhanced Documentation**: Rich descriptions of features and weather parameters
+
+**Configuration Details**:
+- **API Title**: "SMHI Weather Observations API"
+- **Version**: 1.0.0
+- **Security**: API key authentication via `x-api-key` header
+- **Servers**: Local development and production server configurations
+
+---
+
 ### ObservationService.java
 **Location**: `backend/src/main/java/backend/ObservationService.java`
 
 **Purpose**: Core business logic service that processes and merges weather observation data from multiple SMHI parameters.
 
 **Key Features**:
-- **Data Merging**: Combines temperature, wind gusts, and wind speed data
+- **Data Merging**: Combines temperature, wind gusts, and wind speed data (all three parameters fully implemented)
 - **Station Resolution**: Handles station ID resolution and metadata enrichment
+- **Station Set Filtering**: Filters stations by type (core, additional, all)
 - **Geographic Filtering**: Implements Haversine distance calculation
 - **Time-based Filtering**: Supports custom time ranges
 - **Caching Integration**: Works with Spring's caching framework
@@ -73,7 +94,8 @@
    - Returns sorted list of observation points
 
 2. **`getStations()`**
-   - Returns list of available weather stations
+   - Returns list of available weather stations with filtering by set type
+   - Supports "core", "additional", and "all" station sets
    - Fetches station metadata from SMHI API
 
 3. **`resolveStations()`**
@@ -84,6 +106,7 @@
 **Helper Methods**:
 - **`toMap()`**: Converts SMHI series data to timestamp-value maps
 - **`haversineKm()`**: Calculates distance between two geographic points
+- **`isCoreStation()`**: Determines if a station is a core station based on predefined list
 
 **Dependencies**:
 - `SmhiClient` (injected)
@@ -207,7 +230,7 @@
 - **`timestampUtc`**: UTC timestamp of the observation
 - **`gustMs`**: Wind gust speed in meters per second (can be null)
 - **`airTempC`**: Air temperature in Celsius (can be null)
-- **`windSpeedMs`**: Wind speed in meters per second (can be null)
+- **`windSpeedMs`**: Wind speed in meters per second (can be null, now fully implemented)
 
 **Key Features**:
 - **Java Record**: Immutable data structure

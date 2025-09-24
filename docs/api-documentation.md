@@ -39,7 +39,7 @@ GET /api/stations
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `set` | string | No | "core" | Station set type: "core", "additional", or "all" |
+| `set` | string | No | "core" | Station set type: "core" (major stations), "additional" (other stations), or "all" (all stations) |
 
 #### Example Request
 
@@ -168,11 +168,11 @@ curl -H "x-api-key: fhn1CaoXEI6gfOVOuHbJbAbFiM8MY4PH" \
 
 The API integrates with SMHI's Open Data API and merges data from the following weather parameters:
 
-| Parameter ID | Parameter Name | Description |
-|--------------|----------------|-------------|
-| 1 | Lufttemperatur | Air Temperature |
-| 4 | Vindhastighet | Wind Speed |
-| 21 | Byvind | Wind Gust |
+| Parameter ID | Parameter Name | Description | Status |
+|--------------|----------------|-------------|---------|
+| 1 | Lufttemperatur | Air Temperature | ✅ Fully Implemented |
+| 4 | Vindhastighet | Wind Speed | ✅ Fully Implemented |
+| 21 | Byvind | Wind Gust | ✅ Fully Implemented |
 
 ## Error Responses
 
@@ -249,6 +249,8 @@ The API merges multiple weather parameters by:
 3. Combining measurements into unified observation points
 4. Preserving null values for missing measurements
 5. Sorting results by timestamp (newest first) and station ID
+
+**Note**: All three weather parameters (temperature, wind speed, and wind gusts) are now fully implemented and included in the merged observations.
 
 ## Example Usage Scenarios
 

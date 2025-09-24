@@ -115,6 +115,9 @@ GET /api/stations?set=core
 
 **Parameters:**
 - `set` (optional): Station set type (`core`, `additional`, `all`)
+  - `core`: Returns only major weather stations (Stockholm, Göteborg, Malmö, etc.)
+  - `additional`: Returns all stations except core stations
+  - `all`: Returns all available stations (default)
 
 **Response:** List of weather stations with metadata
 
@@ -238,9 +241,9 @@ The application integrates with SMHI's Open Data API:
 
 - **Base URL**: `https://opendata-download-metobs.smhi.se/api/version/1.0`
 - **Parameters**:
-  - Parameter 1: Air Temperature (Lufttemperatur)
-  - Parameter 4: Wind Speed (Vindhastighet)
-  - Parameter 21: Wind Gust (Byvind)
+  - Parameter 1: Air Temperature (Lufttemperatur) - ✅ Fully Implemented
+  - Parameter 4: Wind Speed (Vindhastighet) - ✅ Fully Implemented  
+  - Parameter 21: Wind Gust (Byvind) - ✅ Fully Implemented
 
 ## 🔒 Security
 
@@ -253,9 +256,10 @@ The application integrates with SMHI's Open Data API:
 ### Data Merging Logic
 The `ObservationService` merges multiple weather parameters by:
 1. Fetching data for each parameter (temperature, wind gusts, wind speed)
-2. Creating a union of all timestamps
+2. Creating a union of all timestamps across all parameters
 3. Combining measurements into unified `ObservationPoint` objects
 4. Preserving null values for missing measurements
+5. Sorting results by timestamp (newest first) and station ID
 
 ### Geographic Filtering
 Uses the Haversine formula to calculate distances between coordinates and filter observations within a specified radius.

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: backend.ObservationsIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.710 s -- in backend.ObservationsIntegrationTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.681 s -- in backend.ObservationsIntegrationTest
